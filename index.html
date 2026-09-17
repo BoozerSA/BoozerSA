@@ -240,7 +240,11 @@ input,select{font:inherit;color:inherit}
 .legend i{width:11px;height:11px;border-radius:50%;display:inline-block;vertical-align:-1px;margin-right:5px}
 
 /* ---------- manage list ---------- */
-.mrow{display:flex;align-items:center;gap:13px;background:var(--surface);border-radius:var(--r);padding:13px 15px;box-shadow:var(--shadow-sm);width:100%;text-align:left}
+.mrow{display:flex;align-items:center;gap:6px;background:var(--surface);border-radius:var(--r);padding:13px 15px;box-shadow:var(--shadow-sm)}
+.mrow-main{display:flex;align-items:center;gap:13px;flex:1;min-width:0;text-align:left;background:none;padding:0}
+.mrow-del{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;color:var(--danger);transition:background .15s ease,transform .15s ease}
+.mrow-del:active{background:var(--surface-2);transform:scale(.92)}
+.mrow-del svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .dots{display:flex;gap:3px;margin-top:7px}
 .dots i{width:7px;height:7px;border-radius:2px;background:var(--line)}
 .dots i.on{background:var(--accent)}
@@ -481,6 +485,15 @@ function weekCount(t,dateStr){
   var start=monday(dateStr),n=0;
   for(var i=0;i<7;i++) if(isDone(t.id,addDays(start,i))) n++;
   return n;
+}
+function deleteTask(t){
+  if(!confirm('"'+t.name+'" silinsin mi? Geçmiş kayıtları kalır.')) return false;
+  t.archived=true;
+  for(var i=0;i<state.tasks.length;i++) if(state.tasks[i].id===t.id) state.tasks[i].archived=true;
+  persistTask(state.tasks.filter(function(x){return x.id===t.id})[0]);
+  render();
+  toast("Görev silindi");
+  return true;
 }
 function tasksFor(dateStr){
   return activeTasks().filter(function(t){return isScheduled(t,dateStr)});
@@ -730,17 +743,21 @@ function renderManage(){
   }
   var wrap=el("div","list");
   ts.forEach(function(t){
-    var row=el("button","mrow");
+    var row=el("div","mrow");
     var arr=last30(t);
     var dots=arr.map(function(v){return '<i class="'+(v===2?"on":"")+'" style="'+(v===0?"opacity:.35":"")+(v===2?";background:"+t.color:"")+'"></i>'}).join("");
     var s=streak(t);
     row.innerHTML=
-      '<span class="swatch" style="background:'+t.color+'33">'+esc(t.emoji||"✅")+"</span>"+
-      '<span class="body"><span class="name">'+esc(t.name)+"</span>"+
-      '<span class="meta">'+esc(freqLabel(t))+(s>=2?' · 🔥 '+s:"")+"</span>"+
-      '<span class="dots">'+dots+"</span></span>"+
-      '<svg class="chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
-    row.onclick=function(){ openEditor(t) };
+      '<button class="mrow-main" type="button">'+
+        '<span class="swatch" style="background:'+t.color+'33">'+esc(t.emoji||"✅")+"</span>"+
+        '<span class="body"><span class="name">'+esc(t.name)+"</span>"+
+        '<span class="meta">'+esc(freqLabel(t))+(s>=2?' · 🔥 '+s:"")+"</span>"+
+        '<span class="dots">'+dots+"</span></span>"+
+        '<svg class="chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>'+
+      "</button>"+
+      '<button class="mrow-del" type="button" aria-label="Görevi sil"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M10 11v6M14 11v6"/></svg></button>';
+    row.querySelector(".mrow-main").onclick=function(){ openEditor(t) };
+    row.querySelector(".mrow-del").onclick=function(e){ e.stopPropagation(); deleteTask(t); };
     wrap.appendChild(row);
   });
   scroll.appendChild(wrap);
@@ -833,11 +850,7 @@ function openEditor(task){
   };
   var del=sheet.querySelector("#del");
   if(del) del.onclick=function(){
-    if(!confirm("“"+t.name+"” silinsin mi? Geçmiş kayıtları kalır.")) return;
-    t.archived=true;
-    for(var i=0;i<state.tasks.length;i++) if(state.tasks[i].id===t.id) state.tasks[i].archived=true;
-    persistTask(state.tasks.filter(function(x){return x.id===t.id})[0]);
-    closeSheet(); render(); toast("Görev silindi");
+    if(deleteTask(t)) closeSheet();
   };
 
   scrim.classList.add("open"); sheet.classList.add("open");
