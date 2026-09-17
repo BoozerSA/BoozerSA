@@ -1,6 +1,6 @@
 {
-  "name": "Görev Takvimi",
-  "short_name": "Görevler",
+  "name": "Task Calendar",
+  "short_name": "Task Calendar",
   "description": "Günlük ve haftalık görevlerini takip et, seri (streak) tut.",
   "start_url": "./index.html",
   "id": "./index.html",
