@@ -632,8 +632,9 @@ function renderToday(){
   }
 
   var groups=[
-    {t:"Günlük", items:list.filter(function(x){return x.freq!=="weekly"})},
-    {t:"Bu hafta", items:list.filter(function(x){return x.freq==="weekly"})}
+    {t:"Sabah", items:list.filter(function(x){return (x.period||"sabah")==="sabah"})},
+    {t:"Öğle", items:list.filter(function(x){return x.period==="ogle"})},
+    {t:"Akşam", items:list.filter(function(x){return x.period==="aksam"})}
   ];
   groups.forEach(function(g){
     if(!g.items.length) return;
@@ -768,9 +769,10 @@ function openEditor(task){
   var t=task?JSON.parse(JSON.stringify(task)):{
     id:"t_"+Math.random().toString(36).slice(2,9),
     name:"", emoji:"✅", color:COLORS[3],
-    freq:"daily", days:[0,1,2,3,4], target:3,
+    freq:"daily", days:[0,1,2,3,4], target:3, period:"sabah",
     createdAt:todayKey(), archived:false
   };
+  if(!t.period) t.period="sabah";
 
   sheet.innerHTML='<div class="grab"></div><h2>'+(isNew?"Yeni görev":"Görevi düzenle")+"</h2>"+
     '<div class="field"><label for="nm2">Görev adı</label>'+
@@ -782,6 +784,11 @@ function openEditor(task){
       '<button data-f="days">Seçili günler</button>'+
       '<button data-f="weekly">Haftalık hedef</button>'+
     '</div><div id="freqBody"></div></div>'+
+    '<div class="field"><label>Zaman dilimi</label><div class="segs" id="period">'+
+      '<button data-p="sabah">Sabah</button>'+
+      '<button data-p="ogle">Öğle</button>'+
+      '<button data-p="aksam">Akşam</button>'+
+    '</div></div>'+
     '<button class="btn" id="save">'+(isNew?"Görevi ekle":"Değişiklikleri kaydet")+"</button>"+
     (isNew?"":'<button class="btn ghost" id="del">Görevi sil</button>');
 
@@ -827,6 +834,13 @@ function openEditor(task){
   }
   [].forEach.call(seg.children,function(b){ b.onclick=function(){ t.freq=b.dataset.f; paintFreq() } });
   paintFreq();
+
+  var periodSeg=sheet.querySelector("#period");
+  function paintPeriod(){
+    [].forEach.call(periodSeg.children,function(b){ b.classList.toggle("on",b.dataset.p===t.period) });
+  }
+  [].forEach.call(periodSeg.children,function(b){ b.onclick=function(){ t.period=b.dataset.p; paintPeriod() } });
+  paintPeriod();
 
   sheet.querySelector("#save").onclick=function(){
     var name=sheet.querySelector("#nm2").value.trim();
